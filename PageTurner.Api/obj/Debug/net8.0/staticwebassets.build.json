@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "9nIRLVt0QgZZMmk9DljhophSJWTk0Zxgha7UzKxmS18=",
+  "Source": "PageTurner.Api",
+  "BasePath": "_content/PageTurner.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
