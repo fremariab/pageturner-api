@@ -47,9 +47,27 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Elastic.Clients.Elasticsearch": {
+              "target": "Package",
+              "version": "[9.2.2, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[8.0.21, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.*, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[8.0.5, )"
+            },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.10.1, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
