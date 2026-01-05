@@ -32,7 +32,9 @@ namespace PageTurner.Api.Middlewares
 
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            // 1. Log the error (In a real app, you'd log 'exception.Message' to a file)
+            // 1. Log the error (In a real app, you'd log 'exception.Message' and 'exception.StackTrace' to a file or monitoring system)
+            Console.WriteLine($"[Error] {exception.Message}"); // Log the error message
+            Console.WriteLine($"[StackTrace] {exception.StackTrace}"); // Log the stack trace
 
             // 2. Set the response type to JSON
             context.Response.ContentType = "application/json";
