@@ -1,6 +1,8 @@
+using System.Data.Common;
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace PageTurner.Api.Middlewares
 {
@@ -41,7 +43,12 @@ namespace PageTurner.Api.Middlewares
                 ArgumentNullException => (int)HttpStatusCode.BadRequest,
                 UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                 KeyNotFoundException => (int)HttpStatusCode.NotFound,
-                _ => (int)HttpStatusCode.InternalServerError
+                InvalidOperationException => (int)HttpStatusCode.BadRequest, // Query or transaction issues
+                TaskCanceledException or TimeoutException => (int)HttpStatusCode.RequestTimeout, // Timeout
+                DbUpdateException or DbException => (int)HttpStatusCode.InternalServerError, // ORM or SQL errors
+                // InvalidOperationException => (int)HttpStatusCode.InternalServerError, // Missing environment variables
+                JsonException or FormatException => (int)HttpStatusCode.BadRequest, // Serialization errors
+                _ => (int)HttpStatusCode.InternalServerError,
             };
 
             var errorCode = exception switch
@@ -49,7 +56,12 @@ namespace PageTurner.Api.Middlewares
                 ArgumentNullException => "BAD_REQUEST",
                 UnauthorizedAccessException => "UNAUTHORIZED",
                 KeyNotFoundException => "NOT_FOUND",
-                _ => "INTERNAL_SERVER_ERROR"
+                InvalidOperationException => "INVALID_OPERATION",
+                TaskCanceledException or TimeoutException => "TIMEOUT",
+                DbUpdateException or DbException => "DATABASE_ERROR",
+                // InvalidOperationException => "CONFIGURATION_ERROR",
+                JsonException or FormatException => "SERIALIZATION_ERROR",
+                _ => "INTERNAL_SERVER_ERROR",
             };
 
             var message = exception switch
@@ -57,7 +69,16 @@ namespace PageTurner.Api.Middlewares
                 ArgumentNullException => "A required argument was null.",
                 UnauthorizedAccessException => "You are not authorized to perform this action.",
                 KeyNotFoundException => "The requested resource was not found.",
-                _ => "An unexpected error occurred. Please try again later."
+                InvalidOperationException => "An invalid operation occurred.",
+                TaskCanceledException or TimeoutException =>
+                    "The request timed out. Please try again later.",
+                DbUpdateException or DbException =>
+                    "A database error occurred. Please contact support.",
+                // InvalidOperationException =>
+                // "A required configuration is missing. Please check your environment variables.",
+                JsonException or FormatException =>
+                    "A serialization error occurred. Please check your input.",
+                _ => "An unexpected error occurred. Please try again later.",
             };
 
             context.Response.StatusCode = statusCode;
@@ -67,7 +88,7 @@ namespace PageTurner.Api.Middlewares
             {
                 success = false,
                 errorCode,
-                message
+                message,
             };
 
             // 5. Convert the object to a string and send it back to the user
