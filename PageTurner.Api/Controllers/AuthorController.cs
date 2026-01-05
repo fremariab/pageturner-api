@@ -13,9 +13,12 @@ namespace PageTurner.Api.Controllers
     public class AuthorController : ControllerBase
     {
         private readonly IAuthorService _authorService;
+
         // private readonly ICacheService _cacheService;
 
-        public AuthorController(IAuthorService authorService, ICacheService cacheService)
+        // public AuthorController(IAuthorService authorService, ICacheService cacheService)
+
+        public AuthorController(IAuthorService authorService)
         {
             _authorService = authorService;
             // _cacheService = cacheService;

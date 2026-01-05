@@ -13,9 +13,11 @@ namespace PageTurner.Api.Controllers
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
+
         // private readonly ICacheService _cacheService;
 
-        public ReviewController(IReviewService reviewService, ICacheService cacheService)
+        public ReviewController(IReviewService reviewService)
+        // public ReviewController(IReviewService reviewService, ICacheService cacheService)
         {
             _reviewService = reviewService;
             // _cacheService = cacheService;

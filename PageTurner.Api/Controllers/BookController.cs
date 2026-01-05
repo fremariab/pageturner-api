@@ -13,9 +13,11 @@ namespace PageTurner.Api.Controllers
     public class BookController : ControllerBase
     {
         private readonly IBookService _bookService;
-        // private readonly ICacheService _cacheService;
 
-        public BookController(IBookService bookService, ICacheService cacheService)
+        // private readonly ICacheService _cacheService;
+        public BookController(IBookService bookService)
+        // public BookController(IBookService bookService, ICacheService cacheService)
+
         {
             _bookService = bookService;
             // _cacheService = cacheService;
