@@ -95,6 +95,29 @@ namespace PageTurner.Api.Controllers
             );
         }
 
+        // POST /api/v1/authors/bulk → Add multiple authors
+        [HttpPost("bulk")]
+        public async Task<IActionResult> BulkCreate([FromBody] List<AuthorRequest> requests)
+        {
+            if (requests == null || !requests.Any())
+            {
+                return BadRequest("Request body cannot be empty.");
+            }
+
+            var createdAuthors = new List<AuthorResponse>();
+
+            foreach (var request in requests)
+            {
+                var createdAuthor = await _authorService.AddAuthorAsync(request);
+                createdAuthors.Add(createdAuthor);
+            }
+
+            // Optional: Invalidate relevant caches
+            // await _cacheService.RemoveAsync("authors:page:1:limit:10");
+
+            return Ok(createdAuthors);
+        }
+
         // PATCH /api/v1/authors/{id} → Update a author
         [HttpPut("{authorId}")]
         public async Task<IActionResult> Update(string authorId, [FromBody] AuthorRequest request)
