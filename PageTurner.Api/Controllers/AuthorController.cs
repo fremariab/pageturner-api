@@ -13,12 +13,12 @@ namespace PageTurner.Api.Controllers
     public class AuthorController : ControllerBase
     {
         private readonly IAuthorService _authorService;
-        private readonly ICacheService _cacheService;
+        // private readonly ICacheService _cacheService;
 
         public AuthorController(IAuthorService authorService, ICacheService cacheService)
         {
             _authorService = authorService;
-            _cacheService = cacheService;
+            // _cacheService = cacheService;
         }
 
         // GET /api/v1/authors → Get paginated list
@@ -33,11 +33,11 @@ namespace PageTurner.Api.Controllers
             var cacheKey = $"authors:page:{page}:limit:{limit}";
 
             // 1️⃣ Check cache
-            var cachedAuthors = await _cacheService.GetAsync<PagedResponse<AuthorResponse>>(
-                cacheKey
-            );
-            if (cachedAuthors != null)
-                return Ok(cachedAuthors);
+            // var cachedAuthors = await _cacheService.GetAsync<PagedResponse<AuthorResponse>>(
+            //     cacheKey
+            // );
+            // if (cachedAuthors != null)
+            //     return Ok(cachedAuthors);
 
             // 2️⃣ Fetch from DB
             var authors = await _authorService.GetAllAuthorsAsync(
@@ -48,7 +48,7 @@ namespace PageTurner.Api.Controllers
             );
 
             // 3️⃣ Store in cache
-            await _cacheService.SetAsync(cacheKey, authors, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, authors, TimeSpan.FromMinutes(10));
 
             return Ok(authors);
         }
@@ -60,9 +60,9 @@ namespace PageTurner.Api.Controllers
             var cacheKey = $"author:{authorId}";
 
             // 1️⃣ Check cache
-            var cachedAuthor = await _cacheService.GetAsync<AuthorResponse>(cacheKey);
-            if (cachedAuthor != null)
-                return Ok(cachedAuthor);
+            // var cachedAuthor = await _cacheService.GetAsync<AuthorResponse>(cacheKey);
+            // if (cachedAuthor != null)
+            //     return Ok(cachedAuthor);
 
             // 2️⃣ Fetch from DB
             var author = await _authorService.GetAuthorByIdAsync(authorId);
@@ -70,7 +70,7 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // 3️⃣ Store in cache
-            await _cacheService.SetAsync(cacheKey, author, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, author, TimeSpan.FromMinutes(10));
 
             return Ok(author);
         }
@@ -82,7 +82,7 @@ namespace PageTurner.Api.Controllers
             var createdAuthor = await _authorService.AddAuthorAsync(request);
 
             // Invalidate relevant caches
-            await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
+            // await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
             // Optional: Remove other page caches if you track them
 
             return CreatedAtAction(
@@ -101,8 +101,8 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // Invalidate caches
-            await _cacheService.RemoveAsync($"author:{authorId}");
-            await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
+            // await _cacheService.RemoveAsync($"author:{authorId}");
+            // await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
 
             return Ok(updatedAuthor);
         }
@@ -116,8 +116,8 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // Invalidate caches
-            await _cacheService.RemoveAsync($"author:{authorId}");
-            await _cacheService.RemoveAsync($"authors:page:1:limit:10");
+            // await _cacheService.RemoveAsync($"author:{authorId}");
+            // await _cacheService.RemoveAsync($"authors:page:1:limit:10");
 
             return NoContent();
         }
@@ -132,9 +132,9 @@ namespace PageTurner.Api.Controllers
             var cacheKey = $"author:{authorId}:books:page:{page}:limit:{limit}";
 
             // 1️⃣ Check cache
-            var cachedBooks = await _cacheService.GetAsync<PagedResponse<BookResponse>>(cacheKey);
-            if (cachedBooks != null)
-                return Ok(cachedBooks);
+            // var cachedBooks = await _cacheService.GetAsync<PagedResponse<BookResponse>>(cacheKey);
+            // if (cachedBooks != null)
+            //     return Ok(cachedBooks);
 
             // 2️⃣ Fetch from DB
             var books = await _authorService.GetAllBooksByAuthorIdAsync(page, limit, authorId);
@@ -142,7 +142,7 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // 3️⃣ Store in cache
-            await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
 
             return Ok(books);
         }

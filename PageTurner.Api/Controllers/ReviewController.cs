@@ -13,12 +13,12 @@ namespace PageTurner.Api.Controllers
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
-        private readonly ICacheService _cacheService;
+        // private readonly ICacheService _cacheService;
 
         public ReviewController(IReviewService reviewService, ICacheService cacheService)
         {
             _reviewService = reviewService;
-            _cacheService = cacheService;
+            // _cacheService = cacheService;
         }
 
         // GET /api/v1/reviews → Get paginated list
@@ -32,11 +32,11 @@ namespace PageTurner.Api.Controllers
         {
             var cacheKey = $"reviews:page:{page}:limit:{limit}";
 
-            var cachedReviews = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(
-                cacheKey
-            );
-            if (cachedReviews != null)
-                return Ok(cachedReviews);
+            // var cachedReviews = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(
+            //     cacheKey
+            // );
+            // if (cachedReviews != null)
+            //     return Ok(cachedReviews);
 
             var reviews = await _reviewService.GetAllReviewsAsync(
                 page,
@@ -45,7 +45,7 @@ namespace PageTurner.Api.Controllers
                 reviewerName
             );
 
-            await _cacheService.SetAsync(cacheKey, reviews, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, reviews, TimeSpan.FromMinutes(10));
 
             return Ok(reviews);
         }
@@ -57,9 +57,9 @@ namespace PageTurner.Api.Controllers
             var cacheKey = $"review:{reviewId}";
 
             // 1️⃣ Check cache
-            var cachedReview = await _cacheService.GetAsync<ReviewResponse>(cacheKey);
-            if (cachedReview != null)
-                return Ok(cachedReview);
+            // var cachedReview = await _cacheService.GetAsync<ReviewResponse>(cacheKey);
+            // if (cachedReview != null)
+            //     return Ok(cachedReview);
 
             // 2️⃣ Fetch from DB
             var review = await _reviewService.GetReviewByIdAsync(reviewId);
@@ -67,7 +67,7 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // 3️⃣ Store in cache
-            await _cacheService.SetAsync(cacheKey, review, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, review, TimeSpan.FromMinutes(10));
 
             return Ok(review);
         }
@@ -79,7 +79,7 @@ namespace PageTurner.Api.Controllers
             var createdReview = await _reviewService.AddReviewAsync(request);
 
             // Invalidate relevant caches
-            await _cacheService.RemoveAsync($"reviews:page:1:limit:10"); // example for first page
+            // await _cacheService.RemoveAsync($"reviews:page:1:limit:10"); // example for first page
             // Optional: Remove other page caches if you track them
 
             return CreatedAtAction(
@@ -98,8 +98,8 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // Invalidate caches
-            await _cacheService.RemoveAsync($"review:{reviewId}");
-            await _cacheService.RemoveAsync($"reviews:page:1:limit:10");
+            // await _cacheService.RemoveAsync($"review:{reviewId}");
+            // await _cacheService.RemoveAsync($"reviews:page:1:limit:10");
 
             return NoContent();
         }
@@ -114,9 +114,9 @@ namespace PageTurner.Api.Controllers
             var cacheKey = $"review:{bookId}:books:page:{page}:limit:{limit}";
 
             // 1️⃣ Check cache
-            var cachedBooks = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(cacheKey);
-            if (cachedBooks != null)
-                return Ok(cachedBooks);
+            // var cachedBooks = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(cacheKey);
+            // if (cachedBooks != null)
+            //     return Ok(cachedBooks);
 
             // 2️⃣ Fetch from DB
             var books = await _reviewService.GetReviewByBookIdAsync(page, limit, bookId);
@@ -124,7 +124,7 @@ namespace PageTurner.Api.Controllers
                 return NotFound();
 
             // 3️⃣ Store in cache
-            await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
+            // await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
 
             return Ok(books);
         }
