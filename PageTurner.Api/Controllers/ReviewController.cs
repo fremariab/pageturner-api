@@ -91,6 +91,29 @@ namespace PageTurner.Api.Controllers
             );
         }
 
+        // POST /api/v1/reviews/bulk → Add multiple reviews
+        [HttpPost("bulk")]
+        public async Task<IActionResult> BulkCreate([FromBody] List<ReviewRequest> requests)
+        {
+            if (requests == null || !requests.Any())
+            {
+                return BadRequest("Request body cannot be empty.");
+            }
+
+            var createdReviews = new List<ReviewResponse>();
+
+            foreach (var request in requests)
+            {
+                var createdReview = await _reviewService.AddReviewAsync(request);
+                createdReviews.Add(createdReview);
+            }
+
+            // Optional: Invalidate relevant caches
+            // await _cacheService.RemoveAsync("reviews:page:1:limit:10");
+
+            return Ok(createdReviews);
+        }
+
         // DELETE /api/v1/reviews/{id} → Delete a review
         [HttpDelete("{reviewId}")]
         public async Task<IActionResult> Delete(string reviewId)

@@ -92,6 +92,29 @@ namespace PageTurner.Api.Controllers
             );
         }
 
+        // POST /api/v1/books/bulk → Add multiple books
+        [HttpPost("bulk")]
+        public async Task<IActionResult> BulkCreate([FromBody] List<BookRequest> requests)
+        {
+            if (requests == null || !requests.Any())
+            {
+                return BadRequest("Request body cannot be empty.");
+            }
+
+            var createdBooks = new List<BookResponse>();
+
+            foreach (var request in requests)
+            {
+                var createdBook = await _bookService.AddBookAsync(request);
+                createdBooks.Add(createdBook);
+            }
+
+            // Optional: Invalidate relevant caches
+            // await _cacheService.RemoveAsync("books:page:1:limit:10");
+
+            return Ok(createdBooks);
+        }
+
         // PATCH /api/v1/books/{id} → Update a book
         [HttpPut("{bookId}")]
         public async Task<IActionResult> Update(string bookId, [FromBody] BookRequest request)
