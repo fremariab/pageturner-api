@@ -170,5 +170,39 @@ namespace PageTurner.Api.Services.Implementations
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // Add methods to update book stock
+
+        public async Task<bool> UpdateBookStockAsync(string bookId, int newStock)
+        {
+            var book = await _context.Books.FindAsync(bookId);
+            if (book == null)
+            {
+                return false; // Book not found
+            }
+
+            book.StockQuantity = newStock;
+            _context.Books.Update(book);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> BulkUpdateBookStockAsync(Dictionary<string, int> bookStockUpdates)
+        {
+            var bookIds = bookStockUpdates.Keys;
+            var books = await _context.Books.Where(b => bookIds.Contains(b.BookId)).ToListAsync();
+
+            foreach (var book in books)
+            {
+                if (bookStockUpdates.TryGetValue(book.BookId, out var newStock))
+                {
+                    book.StockQuantity = newStock;
+                }
+            }
+
+            _context.Books.UpdateRange(books);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
