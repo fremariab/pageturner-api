@@ -29,17 +29,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // 3. Configure Infrastructure (Redis & Elasticsearch)
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+// var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
 
-// ensure you have the correct using statement for your RedisConnection class
-builder.Services.AddSingleton(
-    new PageTurner.Api.Infrastructure.Redis.RedisConnection(redisConnectionString!)
-);
+// // ensure you have the correct using statement for your RedisConnection class
+// builder.Services.AddSingleton(
+//     new PageTurner.Api.Infrastructure.Redis.RedisConnection(redisConnectionString!)
+// );
 
-builder.Services.AddSingleton<
-    PageTurner.Api.Services.Interfaces.ICacheService,
-    PageTurner.Api.Services.Implementations.RedisCacheService
->();
+// builder.Services.AddSingleton<
+//     PageTurner.Api.Services.Interfaces.ICacheService,
+//     PageTurner.Api.Services.Implementations.RedisCacheService
+// >();
 
 builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 {
