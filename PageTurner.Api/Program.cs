@@ -55,6 +55,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 var app = builder.Build();
 
 // 5. Configure the Request Pipeline
+app.UseMiddleware<PageTurner.Api.Middlewares.ErrorHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
