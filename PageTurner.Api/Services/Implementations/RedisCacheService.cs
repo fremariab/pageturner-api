@@ -7,34 +7,35 @@
 
 // namespace PageTurner.Api.Services.Implementations
 // {
-//     public class RedisCacheService : ICacheService
-//     {
-//         private readonly IDatabase _database;
+//     // Commenting out RedisCacheService implementation
+//     // public class RedisCacheService : ICacheService
+//     // {
+//     //     private readonly IDatabase _database;
 
-//         public RedisCacheService(RedisConnection redisConnection)
-//         {
-//             _database = redisConnection.GetDatabase();
-//         }
+//     //     public RedisCacheService(RedisConnection redisConnection)
+//     //     {
+//     //         _database = redisConnection.GetDatabase();
+//     //     }
 
-//         public async Task SetAsync<T>(string key, T value, TimeSpan expiration)
-//         {
-//             var json = JsonSerializer.Serialize(value);
-//             await _database.StringSetAsync(key, json, expiration);
-//         }
+//     //     public async Task SetAsync<T>(string key, T value, TimeSpan expiration)
+//     //     {
+//     //         var json = JsonSerializer.Serialize(value);
+//     //         await _database.StringSetAsync(key, json, expiration);
+//     //     }
 
-//         public async Task<T?> GetAsync<T>(string key)
-//         {
-//             var value = await _database.StringGetAsync(key);
+//     //     public async Task<T?> GetAsync<T>(string key)
+//     //     {
+//     //         var value = await _database.StringGetAsync(key);
 
-//             if (!value.HasValue)
-//                 return default;
+//     //         if (!value.HasValue)
+//     //             return default;
 
-//             return JsonSerializer.Deserialize<T>(value!);
-//         }
+//     //         return JsonSerializer.Deserialize<T>(value!);
+//     //     }
 
-//         public async Task RemoveAsync(string key)
-//         {
-//             await _database.KeyDeleteAsync(key);
-//         }
-//     }
+//     //     public async Task RemoveAsync(string key)
+//     //     {
+//     //         await _database.KeyDeleteAsync(key);
+//     //     }
+//     // }
 // }

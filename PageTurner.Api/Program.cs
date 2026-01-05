@@ -36,11 +36,6 @@ builder.Services.AddSwaggerGen();
 //     new PageTurner.Api.Infrastructure.Redis.RedisConnection(redisConnectionString!)
 // );
 
-// builder.Services.AddSingleton<
-//     PageTurner.Api.Services.Interfaces.ICacheService,
-//     PageTurner.Api.Services.Implementations.RedisCacheService
-// >();
-
 builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 {
     var provider = new ElasticClientProvider(builder.Configuration);
