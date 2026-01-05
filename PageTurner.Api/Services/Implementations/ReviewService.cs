@@ -130,10 +130,11 @@ namespace PageTurner.Api.Services.Implementations
 
         public async Task<ReviewResponse> AddReviewAsync(ReviewRequest request)
         {
-            var query = _context.Books.AsQueryable();
-
-            if (!string.IsNullOrEmpty(request.BookId))
-                query = query.Where(b => b.BookId == request.BookId);
+            var book = await _context.Books.FindAsync(request.BookId);
+            if (book == null)
+            {
+                throw new Exception("Book not found.");
+            }
 
             var review = new Review
             {
@@ -154,6 +155,8 @@ namespace PageTurner.Api.Services.Implementations
                 Comment = review.Comment ?? string.Empty,
                 Rating = review.Rating,
                 BookId = review.BookId,
+                BookTitle = book.BookTitle,
+                Author = book.Author,
             };
         }
 
