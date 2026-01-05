@@ -35,15 +35,39 @@ namespace PageTurner.Api.Middlewares
             // 2. Set the response type to JSON
             context.Response.ContentType = "application/json";
 
-            // 3. Set the Status Code to 500 (Server Error)
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            // 3. Determine the status code and error message based on the exception type
+            var statusCode = exception switch
+            {
+                ArgumentNullException => (int)HttpStatusCode.BadRequest,
+                UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
+                KeyNotFoundException => (int)HttpStatusCode.NotFound,
+                _ => (int)HttpStatusCode.InternalServerError
+            };
+
+            var errorCode = exception switch
+            {
+                ArgumentNullException => "BAD_REQUEST",
+                UnauthorizedAccessException => "UNAUTHORIZED",
+                KeyNotFoundException => "NOT_FOUND",
+                _ => "INTERNAL_SERVER_ERROR"
+            };
+
+            var message = exception switch
+            {
+                ArgumentNullException => "A required argument was null.",
+                UnauthorizedAccessException => "You are not authorized to perform this action.",
+                KeyNotFoundException => "The requested resource was not found.",
+                _ => "An unexpected error occurred. Please try again later."
+            };
+
+            context.Response.StatusCode = statusCode;
 
             // 4. Create your consistent error object
             var response = new
             {
                 success = false,
-                errorCode = "INTERNAL_SERVER_ERROR",
-                message = "An unexpected error occurred. Please try again later.",
+                errorCode,
+                message
             };
 
             // 5. Convert the object to a string and send it back to the user
