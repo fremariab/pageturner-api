@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PageTurner.Api.Data;
 using PageTurner.Api.Models.DTOs;
 using PageTurner.Api.Models.Entities;
+using PageTurner.Api.Models.Filters;
 using PageTurner.Api.Services.Interfaces;
 
 namespace PageTurner.Api.Services.Implementations
@@ -18,43 +19,66 @@ namespace PageTurner.Api.Services.Implementations
         public async Task<PagedResponse<AuthorResponse>> GetAllAuthorsAsync(
             int pageNumber,
             int pageSize,
-            string? authorName,
-            string? authorId
+            AuthorFilter? filter = null
         )
         {
-            var query = _context.Authors.AsQueryable();
-
-            if (!string.IsNullOrEmpty(authorId))
-                query = query.Where(a => a.AuthorId == authorId);
-
-            if (!string.IsNullOrEmpty(authorName))
-                query = query.Where(a => a.AuthorName == authorName);
-
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
-            var items = await query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(a => new AuthorResponse
-                {
-                    AuthorId = a.AuthorId,
-                    AuthorName = a.AuthorName,
-                    AuthorBio = a.AuthorBio ?? string.Empty,
-                })
-                .ToListAsync();
-
-            return new PagedResponse<AuthorResponse>
+            try
             {
-                Data = items,
-                Pagination = new Pagination
+                if (pageNumber <= 0)
                 {
-                    TotalItems = totalItems,
-                    CurrentPage = pageNumber,
-                    TotalPages = totalPages,
-                    Limit = pageSize,
-                },
-            };
+                    throw new ArgumentException("Page number must be greater than 0");
+                }
+                if (pageSize <= 0 || pageSize > 100)
+                {
+                    throw new ArgumentException("Page size must be between 1 and 100");
+                }
+
+                var query = _context.Authors.AsQueryable();
+
+                if (filter != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(filter.AuthorBio))
+                    {
+                        query = query.Where(a =>
+                            a.AuthorBio != null
+                            && a.AuthorBio.ToLower().Contains(filter.AuthorBio.ToLower())
+                        );
+                    }
+
+                    if (!string.IsNullOrEmpty(filter.AuthorName))
+                        query = query.Where(a => a.AuthorName == filter.AuthorName);
+                }
+
+                var totalItems = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                var items = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(a => new AuthorResponse
+                    {
+                        AuthorId = a.AuthorId,
+                        AuthorName = a.AuthorName,
+                        AuthorBio = a.AuthorBio ?? string.Empty,
+                    })
+                    .ToListAsync();
+
+                return new PagedResponse<AuthorResponse>
+                {
+                    Data = items,
+                    Pagination = new Pagination
+                    {
+                        TotalItems = totalItems,
+                        CurrentPage = pageNumber,
+                        TotalPages = totalPages,
+                        Limit = pageSize,
+                    },
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<AuthorResponse?> GetAuthorByIdAsync(string authorId)

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PageTurner.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+75e24d44ebe64f3802b2b00cd9200c43d620537d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ad1d5896b02f82a2e54e935ff76bc03f4fb9a8d5")]
 [assembly: System.Reflection.AssemblyProductAttribute("PageTurner.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PageTurner.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

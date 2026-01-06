@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PageTurner.Api.Models;
 using PageTurner.Api.Models.DTOs;
+using PageTurner.Api.Models.Filters;
 using PageTurner.Api.Services.Interfaces;
 
 namespace PageTurner.Api.Controllers
@@ -14,44 +15,20 @@ namespace PageTurner.Api.Controllers
     {
         private readonly IAuthorService _authorService;
 
-        // private readonly ICacheService _cacheService;
-
-        // public AuthorController(IAuthorService authorService, ICacheService cacheService)
-
         public AuthorController(IAuthorService authorService)
         {
             _authorService = authorService;
-            // _cacheService = cacheService;
         }
 
         // GET /api/v1/authors → Get paginated list
         [HttpGet]
         public async Task<IActionResult> GetAll(
+            [FromQuery] AuthorFilter? filter,
             [FromQuery] int page = 1,
-            [FromQuery] int limit = 10,
-            [FromQuery] string? authorId = null,
-            [FromQuery] string? authorName = null
+            [FromQuery] int limit = 10
         )
         {
-            var cacheKey = $"authors:page:{page}:limit:{limit}";
-
-            // 1️⃣ Check cache
-            // var cachedAuthors = await _cacheService.GetAsync<PagedResponse<AuthorResponse>>(
-            //     cacheKey
-            // );
-            // if (cachedAuthors != null)
-            //     return Ok(cachedAuthors);
-
-            // 2️⃣ Fetch from DB
-            var authors = await _authorService.GetAllAuthorsAsync(
-                page,
-                limit,
-                authorId,
-                authorName
-            );
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, authors, TimeSpan.FromMinutes(10));
+            var authors = await _authorService.GetAllAuthorsAsync(page, limit, filter);
 
             return Ok(authors);
         }
@@ -60,20 +37,9 @@ namespace PageTurner.Api.Controllers
         [HttpGet("{authorId}")]
         public async Task<IActionResult> GetById(string authorId)
         {
-            var cacheKey = $"author:{authorId}";
-
-            // 1️⃣ Check cache
-            // var cachedAuthor = await _cacheService.GetAsync<AuthorResponse>(cacheKey);
-            // if (cachedAuthor != null)
-            //     return Ok(cachedAuthor);
-
-            // 2️⃣ Fetch from DB
             var author = await _authorService.GetAuthorByIdAsync(authorId);
             if (author == null)
                 return NotFound();
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, author, TimeSpan.FromMinutes(10));
 
             return Ok(author);
         }
@@ -83,10 +49,6 @@ namespace PageTurner.Api.Controllers
         public async Task<IActionResult> Create([FromBody] AuthorRequest request)
         {
             var createdAuthor = await _authorService.AddAuthorAsync(request);
-
-            // Invalidate relevant caches
-            // await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
-            // Optional: Remove other page caches if you track them
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -104,16 +66,30 @@ namespace PageTurner.Api.Controllers
                 return BadRequest("Request body cannot be empty.");
             }
 
+            var invalidRequests = new List<string>();
             var createdAuthors = new List<AuthorResponse>();
 
             foreach (var request in requests)
             {
-                var createdAuthor = await _authorService.AddAuthorAsync(request);
-                createdAuthors.Add(createdAuthor);
+                try
+                {
+                    var createdAuthor = await _authorService.AddAuthorAsync(request);
+                    createdAuthors.Add(createdAuthor);
+                }
+                catch (Exception ex)
+                {
+                    invalidRequests.Add(
+                        $"Author with Name {request.AuthorName} failed: {ex.Message}"
+                    );
+                }
             }
 
-            // Optional: Invalidate relevant caches
-            // await _cacheService.RemoveAsync("authors:page:1:limit:10");
+            if (invalidRequests.Any())
+            {
+                return BadRequest(
+                    new { Message = "Some authors could not be created.", Errors = invalidRequests }
+                );
+            }
 
             return Ok(createdAuthors);
         }
@@ -126,10 +102,6 @@ namespace PageTurner.Api.Controllers
             if (updatedAuthor == null)
                 return NotFound();
 
-            // Invalidate caches
-            // await _cacheService.RemoveAsync($"author:{authorId}");
-            // await _cacheService.RemoveAsync($"authors:page:1:limit:10"); // example for first page
-
             return Ok(updatedAuthor);
         }
 
@@ -140,10 +112,6 @@ namespace PageTurner.Api.Controllers
             var deleted = await _authorService.DeleteAuthorAsync(authorId);
             if (!deleted)
                 return NotFound();
-
-            // Invalidate caches
-            // await _cacheService.RemoveAsync($"author:{authorId}");
-            // await _cacheService.RemoveAsync($"authors:page:1:limit:10");
 
             return NoContent();
         }
@@ -157,18 +125,9 @@ namespace PageTurner.Api.Controllers
         {
             var cacheKey = $"author:{authorId}:books:page:{page}:limit:{limit}";
 
-            // 1️⃣ Check cache
-            // var cachedBooks = await _cacheService.GetAsync<PagedResponse<BookResponse>>(cacheKey);
-            // if (cachedBooks != null)
-            //     return Ok(cachedBooks);
-
-            // 2️⃣ Fetch from DB
             var books = await _authorService.GetAllBooksByAuthorIdAsync(page, limit, authorId);
             if (books == null)
                 return NotFound();
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
 
             return Ok(books);
         }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PageTurner.Api.Data;
 using PageTurner.Api.Models.DTOs;
 using PageTurner.Api.Models.Entities;
+using PageTurner.Api.Models.Filters;
 using PageTurner.Api.Services.Interfaces;
 
 namespace PageTurner.Api.Services.Implementations
@@ -18,53 +19,86 @@ namespace PageTurner.Api.Services.Implementations
         public async Task<PagedResponse<ReviewResponse>> GetAllReviewsAsync(
             int pageNumber,
             int pageSize,
-            string? reviewId,
-            string? reviewerName
+            ReviewFilter? filter = null
         )
         {
-            var query = _context.Reviews.AsQueryable();
-
-            if (!string.IsNullOrEmpty(reviewId))
-                query = query.Where(r => r.ReviewId == reviewId);
-
-            if (!string.IsNullOrEmpty(reviewerName))
-                query = query.Where(r => r.ReviewerName == reviewerName);
-
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
-            var items = await query
-                .Join(
-                    _context.Books,
-                    review => review.BookId,
-                    book => book.BookId,
-                    (review, book) =>
-                        new ReviewResponse
-                        {
-                            ReviewId = review.ReviewId,
-                            ReviewerName = review.ReviewerName,
-                            Rating = review.Rating,
-                            Comment = review.Comment,
-                            BookId = review.BookId,
-                            BookTitle = book.BookTitle,
-                            Author = book.Author,
-                        }
-                )
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return new PagedResponse<ReviewResponse>
+            try
             {
-                Data = items,
-                Pagination = new Pagination
+                if (pageNumber <= 0)
                 {
-                    TotalItems = totalItems,
-                    CurrentPage = pageNumber,
-                    TotalPages = totalPages,
-                    Limit = pageSize,
-                },
-            };
+                    throw new ArgumentException("Page number must be greater than 0");
+                }
+                if (pageSize <= 0 || pageSize > 100)
+                {
+                    throw new ArgumentException("Page size must be between 1 and 100");
+                }
+
+                var query = _context
+                    .Reviews.Join(
+                        _context.Books,
+                        review => review.BookId,
+                        book => book.BookId,
+                        (review, book) => new { Review = review, Book = book }
+                    )
+                    .AsQueryable();
+
+                if (filter != null)
+                {
+                    if (!string.IsNullOrEmpty(filter.ReviewerName))
+                        query = query.Where(r =>
+                            r.Review.ReviewerName.Contains(filter.ReviewerName)
+                        );
+
+                    if (!string.IsNullOrEmpty(filter.Comment))
+                    {
+                        query = query.Where(r =>
+                            r.Review.Comment != null && r.Review.Comment.Contains(filter.Comment)
+                        );
+                    }
+                    if (!string.IsNullOrEmpty(filter.BookTitle))
+                    {
+                        query = query.Where(r => r.Book.BookTitle.Contains(filter.BookTitle));
+                    }
+                    if (filter.Rating.HasValue)
+                    {
+                        query = query.Where(r => r.Review.Rating >= filter.Rating.Value);
+                    }
+                }
+
+                var totalItems = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                var items = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => new ReviewResponse
+                    {
+                        ReviewId = x.Review.ReviewId,
+                        ReviewerName = x.Review.ReviewerName,
+                        Rating = x.Review.Rating,
+                        Comment = x.Review.Comment,
+                        BookId = x.Review.BookId,
+                        BookTitle = x.Book.BookTitle,
+                        Author = x.Book.Author,
+                    })
+                    .ToListAsync();
+
+                return new PagedResponse<ReviewResponse>
+                {
+                    Data = items,
+                    Pagination = new Pagination
+                    {
+                        TotalItems = totalItems,
+                        CurrentPage = pageNumber,
+                        TotalPages = totalPages,
+                        Limit = pageSize,
+                    },
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<ReviewResponse?> GetReviewByIdAsync(string reviewId)
@@ -133,12 +167,13 @@ namespace PageTurner.Api.Services.Implementations
             var book = await _context.Books.FindAsync(request.BookId);
             if (book == null)
             {
-                throw new Exception("Book not found.");
+                throw new KeyNotFoundException("Book not found.");
             }
 
+            var reviewId = Guid.NewGuid().ToString();
             var review = new Review
             {
-                ReviewId = Guid.NewGuid().ToString(),
+                ReviewId = reviewId,
                 ReviewerName = request.ReviewerName,
                 Comment = request.Comment ?? string.Empty,
                 Rating = request.Rating,
@@ -150,9 +185,9 @@ namespace PageTurner.Api.Services.Implementations
 
             return new ReviewResponse
             {
-                ReviewId = Guid.NewGuid().ToString(),
+                ReviewId = reviewId,
                 ReviewerName = review.ReviewerName,
-                Comment = review.Comment ?? string.Empty,
+                Comment = review.Comment,
                 Rating = review.Rating,
                 BookId = review.BookId,
                 BookTitle = book.BookTitle,
@@ -164,43 +199,11 @@ namespace PageTurner.Api.Services.Implementations
         {
             var review = await _context.Reviews.FindAsync(bookId);
             if (review == null)
-                return false;
+            {
+                throw new KeyNotFoundException("Review not found.");
+            }
 
             _context.Reviews.Remove(review);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        // Add methods to update book stock
-
-        public async Task<bool> UpdateBookStockAsync(string bookId, int newStock)
-        {
-            var book = await _context.Books.FindAsync(bookId);
-            if (book == null)
-            {
-                return false; // Book not found
-            }
-
-            book.StockQuantity = newStock;
-            _context.Books.Update(book);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> BulkUpdateBookStockAsync(Dictionary<string, int> bookStockUpdates)
-        {
-            var bookIds = bookStockUpdates.Keys;
-            var books = await _context.Books.Where(b => bookIds.Contains(b.BookId)).ToListAsync();
-
-            foreach (var book in books)
-            {
-                if (bookStockUpdates.TryGetValue(book.BookId, out var newStock))
-                {
-                    book.StockQuantity = newStock;
-                }
-            }
-
-            _context.Books.UpdateRange(books);
             await _context.SaveChangesAsync();
             return true;
         }

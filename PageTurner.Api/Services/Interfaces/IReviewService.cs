@@ -1,4 +1,6 @@
 using PageTurner.Api.Models.DTOs;
+using PageTurner.Api.Models.Entities;
+using PageTurner.Api.Models.Filters;
 
 namespace PageTurner.Api.Services.Interfaces
 {
@@ -7,8 +9,7 @@ namespace PageTurner.Api.Services.Interfaces
         Task<PagedResponse<ReviewResponse>> GetAllReviewsAsync(
             int pageNumber,
             int pageSize,
-            string? reviewId,
-            string? reviewerName
+            ReviewFilter? filter = null
         );
         Task<ReviewResponse?> GetReviewByIdAsync(string reviewId);
         Task<PagedResponse<ReviewResponse>> GetReviewByBookIdAsync(

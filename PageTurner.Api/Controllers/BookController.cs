@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PageTurner.Api.Models;
 using PageTurner.Api.Models.DTOs;
+using PageTurner.Api.Models.Filters;
 using PageTurner.Api.Services.Interfaces;
 
 namespace PageTurner.Api.Controllers
@@ -14,41 +15,20 @@ namespace PageTurner.Api.Controllers
     {
         private readonly IBookService _bookService;
 
-        // private readonly ICacheService _cacheService;
         public BookController(IBookService bookService)
-        // public BookController(IBookService bookService, ICacheService cacheService)
-
         {
             _bookService = bookService;
-            // _cacheService = cacheService;
         }
 
         // GET /api/v1/books → Get paginated list
         [HttpGet]
         public async Task<IActionResult> GetAll(
+            [FromQuery] BookFilter? filter,
             [FromQuery] int page = 1,
-            [FromQuery] int limit = 10,
-            [FromQuery] string? bookTitle = null,
-            [FromQuery] string? authorName = null,
-            [FromQuery] string? genre = null
+            [FromQuery] int limit = 10
         )
         {
-            var cacheKey =
-                $"books:page:{page}:limit:{limit}:bookTitle:{bookTitle ?? "all"}:authorName:{authorName ?? "all"}:genre:{genre ?? "all"}";
-
-            // var cachedBooks = await _cacheService.GetAsync<PagedResponse<BookResponse>>(cacheKey);
-            // if (cachedBooks != null)
-            //     return Ok(cachedBooks);
-
-            var books = await _bookService.GetAllBooksAsync(
-                page,
-                limit,
-                genre,
-                bookTitle,
-                authorName
-            );
-
-            // await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
+            var books = await _bookService.GetAllBooksAsync(page, limit, filter);
 
             return Ok(books);
         }
@@ -57,20 +37,10 @@ namespace PageTurner.Api.Controllers
         [HttpGet("{bookId}")]
         public async Task<IActionResult> GetById(string bookId)
         {
-            var cacheKey = $"book:{bookId}";
-
-            // 1️⃣ Check cache
-            // var cachedBook = await _cacheService.GetAsync<BookResponse>(cacheKey);
-            // if (cachedBook != null)
-            //     return Ok(cachedBook);
-
             // 2️⃣ Fetch from DB
             var book = await _bookService.GetBookByIdAsync(bookId);
             if (book == null)
                 return NotFound();
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, book, TimeSpan.FromMinutes(10));
 
             return Ok(book);
         }
@@ -80,10 +50,6 @@ namespace PageTurner.Api.Controllers
         public async Task<IActionResult> Create([FromBody] BookRequest request)
         {
             var createdBook = await _bookService.AddBookAsync(request);
-
-            // Invalidate relevant caches
-            // await _cacheService.RemoveAsync($"books:page:1:limit:10"); // example for first page
-            // Optional: Remove other page caches if you track them
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -101,16 +67,30 @@ namespace PageTurner.Api.Controllers
                 return BadRequest("Request body cannot be empty.");
             }
 
+            var invalidRequests = new List<string>();
             var createdBooks = new List<BookResponse>();
 
             foreach (var request in requests)
             {
-                var createdBook = await _bookService.AddBookAsync(request);
-                createdBooks.Add(createdBook);
+                try
+                {
+                    var createdBook = await _bookService.AddBookAsync(request);
+                    createdBooks.Add(createdBook);
+                }
+                catch (Exception ex)
+                {
+                    invalidRequests.Add(
+                        $"Book with Title {request.BookTitle} failed: {ex.Message}"
+                    );
+                }
             }
 
-            // Optional: Invalidate relevant caches
-            // await _cacheService.RemoveAsync("books:page:1:limit:10");
+            if (invalidRequests.Any())
+            {
+                return BadRequest(
+                    new { Message = "Some books could not be created.", Errors = invalidRequests }
+                );
+            }
 
             return Ok(createdBooks);
         }
@@ -123,10 +103,6 @@ namespace PageTurner.Api.Controllers
             if (updatedBook == null)
                 return NotFound();
 
-            // Invalidate caches
-            // await _cacheService.RemoveAsync($"book:{bookId}");
-            // await _cacheService.RemoveAsync($"books:page:1:limit:10"); // example for first page
-
             return Ok(updatedBook);
         }
 
@@ -137,10 +113,6 @@ namespace PageTurner.Api.Controllers
             var deleted = await _bookService.DeleteBookAsync(bookId);
             if (!deleted)
                 return NotFound();
-
-            // Invalidate caches
-            // await _cacheService.RemoveAsync($"book:{bookId}");
-            // await _cacheService.RemoveAsync($"books:page:1:limit:10");
 
             return NoContent();
         }

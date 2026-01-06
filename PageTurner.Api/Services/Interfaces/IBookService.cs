@@ -1,4 +1,5 @@
 using PageTurner.Api.Models.DTOs;
+using PageTurner.Api.Models.Filters;
 
 namespace PageTurner.Api.Services.Interfaces
 {
@@ -7,9 +8,7 @@ namespace PageTurner.Api.Services.Interfaces
         Task<PagedResponse<BookResponse>> GetAllBooksAsync(
             int pageNumber,
             int pageSize,
-            string? genre,
-            string? bookTitle,
-            string? author
+            BookFilter? filter = null
         );
         Task<BookResponse?> GetBookByIdAsync(string bookId);
         Task<BookResponse> AddBookAsync(BookRequest request);

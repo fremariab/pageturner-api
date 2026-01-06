@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PageTurner.Api.Models;
 using PageTurner.Api.Models.DTOs;
+using PageTurner.Api.Models.Filters;
 using PageTurner.Api.Services.Interfaces;
 
 namespace PageTurner.Api.Controllers
@@ -14,40 +15,20 @@ namespace PageTurner.Api.Controllers
     {
         private readonly IReviewService _reviewService;
 
-        // private readonly ICacheService _cacheService;
-
         public ReviewController(IReviewService reviewService)
-        // public ReviewController(IReviewService reviewService, ICacheService cacheService)
         {
             _reviewService = reviewService;
-            // _cacheService = cacheService;
         }
 
         // GET /api/v1/reviews → Get paginated list
         [HttpGet]
         public async Task<IActionResult> GetAll(
+            [FromQuery] ReviewFilter? filter,
             [FromQuery] int page = 1,
-            [FromQuery] int limit = 10,
-            [FromQuery] string? reviewId = null,
-            [FromQuery] string? reviewerName = null
+            [FromQuery] int limit = 10
         )
         {
-            var cacheKey = $"reviews:page:{page}:limit:{limit}";
-
-            // var cachedReviews = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(
-            //     cacheKey
-            // );
-            // if (cachedReviews != null)
-            //     return Ok(cachedReviews);
-
-            var reviews = await _reviewService.GetAllReviewsAsync(
-                page,
-                limit,
-                reviewId,
-                reviewerName
-            );
-
-            // await _cacheService.SetAsync(cacheKey, reviews, TimeSpan.FromMinutes(10));
+            var reviews = await _reviewService.GetAllReviewsAsync(page, limit, filter);
 
             return Ok(reviews);
         }
@@ -56,20 +37,9 @@ namespace PageTurner.Api.Controllers
         [HttpGet("{reviewId}")]
         public async Task<IActionResult> GetById(string reviewId)
         {
-            var cacheKey = $"review:{reviewId}";
-
-            // 1️⃣ Check cache
-            // var cachedReview = await _cacheService.GetAsync<ReviewResponse>(cacheKey);
-            // if (cachedReview != null)
-            //     return Ok(cachedReview);
-
-            // 2️⃣ Fetch from DB
             var review = await _reviewService.GetReviewByIdAsync(reviewId);
             if (review == null)
                 return NotFound();
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, review, TimeSpan.FromMinutes(10));
 
             return Ok(review);
         }
@@ -79,10 +49,6 @@ namespace PageTurner.Api.Controllers
         public async Task<IActionResult> Create([FromBody] ReviewRequest request)
         {
             var createdReview = await _reviewService.AddReviewAsync(request);
-
-            // Invalidate relevant caches
-            // await _cacheService.RemoveAsync($"reviews:page:1:limit:10"); // example for first page
-            // Optional: Remove other page caches if you track them
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -100,16 +66,32 @@ namespace PageTurner.Api.Controllers
                 return BadRequest("Request body cannot be empty.");
             }
 
+            var invalidRequests = new List<string>();
             var createdReviews = new List<ReviewResponse>();
 
             foreach (var request in requests)
             {
-                var createdReview = await _reviewService.AddReviewAsync(request);
-                createdReviews.Add(createdReview);
+                try
+                {
+                    var createdReview = await _reviewService.AddReviewAsync(request);
+                    createdReviews.Add(createdReview);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    invalidRequests.Add($"Review for BookId {request.BookId} failed: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    invalidRequests.Add($"Review for BookId {request.BookId} failed: {ex.Message}");
+                }
             }
 
-            // Optional: Invalidate relevant caches
-            // await _cacheService.RemoveAsync("reviews:page:1:limit:10");
+            if (invalidRequests.Any())
+            {
+                return BadRequest(
+                    new { Message = "Some reviews could not be created.", Errors = invalidRequests }
+                );
+            }
 
             return Ok(createdReviews);
         }
@@ -122,10 +104,6 @@ namespace PageTurner.Api.Controllers
             if (!deleted)
                 return NotFound();
 
-            // Invalidate caches
-            // await _cacheService.RemoveAsync($"review:{reviewId}");
-            // await _cacheService.RemoveAsync($"reviews:page:1:limit:10");
-
             return NoContent();
         }
 
@@ -136,20 +114,9 @@ namespace PageTurner.Api.Controllers
             [FromQuery] int limit = 10
         )
         {
-            var cacheKey = $"review:{bookId}:books:page:{page}:limit:{limit}";
-
-            // 1️⃣ Check cache
-            // var cachedBooks = await _cacheService.GetAsync<PagedResponse<ReviewResponse>>(cacheKey);
-            // if (cachedBooks != null)
-            //     return Ok(cachedBooks);
-
-            // 2️⃣ Fetch from DB
             var books = await _reviewService.GetReviewByBookIdAsync(page, limit, bookId);
             if (books == null)
                 return NotFound();
-
-            // 3️⃣ Store in cache
-            // await _cacheService.SetAsync(cacheKey, books, TimeSpan.FromMinutes(10));
 
             return Ok(books);
         }

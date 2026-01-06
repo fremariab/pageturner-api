@@ -89,6 +89,7 @@ namespace PageTurner.Api.Middlewares
             var response = new
             {
                 success = false,
+                statusCode, // Include the HTTP status code in the response
                 errorCode,
                 message,
             };
