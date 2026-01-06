@@ -96,6 +96,40 @@ namespace PageTurner.Api.Services.Implementations
                     }
                 }
 
+                if (!string.IsNullOrWhiteSpace(filter?.SortBy))
+                {
+                    var isDesc = filter.SortDirection?.ToLower() == "desc";
+
+                    query = filter.SortBy.ToLower() switch
+                    {
+                        "price" => isDesc
+                            ? query.OrderByDescending(b => b.Book.Price)
+                            : query.OrderBy(b => b.Book.Price),
+
+                        "bookid" => isDesc
+                            ? query.OrderByDescending(b => b.Book.BookId)
+                            : query.OrderBy(b => b.Book.BookId),
+                        "booktitle" => isDesc
+                            ? query.OrderByDescending(b => b.Book.BookTitle)
+                            : query.OrderBy(b => b.Book.BookTitle),
+
+                        "averagerating" => isDesc
+                            ? query.OrderByDescending(b => b.Book.AverageRating)
+                            : query.OrderBy(b => b.Book.AverageRating),
+                        "stockquantity" => isDesc
+                            ? query.OrderByDescending(b => b.Book.StockQuantity)
+                            : query.OrderBy(b => b.Book.StockQuantity),
+                        "isbn" => isDesc
+                            ? query.OrderByDescending(b => b.Book.ISBN)
+                            : query.OrderBy(b => b.Book.ISBN),
+                        "author" => isDesc
+                            ? query.OrderByDescending(a => a.Author.AuthorName)
+                            : query.OrderBy(a => a.Author.AuthorName),
+
+                        _ => query.OrderBy(b => b.Book.BookTitle), // default sort
+                    };
+                }
+
                 var totalItems = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 

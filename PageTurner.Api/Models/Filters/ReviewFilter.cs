@@ -6,5 +6,7 @@ namespace PageTurner.Api.Models.Filters
         public string? Comment { get; set; }
         public int? Rating { get; set; }
         public string? BookTitle { get; set; }
+        public string? SortBy { get; set; }
+        public string? SortDirection { get; set; }
     }
 }

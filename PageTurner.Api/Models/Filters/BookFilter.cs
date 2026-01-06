@@ -9,8 +9,10 @@ namespace PageTurner.Api.Models.Filters
         public int? StockQuantity { get; set; }
         public string? Genre { get; set; }
         public double? AverageRating { get; set; }
-        public bool? InStock { get; set; } // Filter for books that are in stock
-        public double? MinPrice { get; set; } // Minimum price for price range filtering
-        public double? MaxPrice { get; set; } // Maximum price for price range filtering
+        public bool? InStock { get; set; }
+        public double? MinPrice { get; set; }
+        public double? MaxPrice { get; set; }
+        public string? SortBy { get; set; }
+        public string? SortDirection { get; set; }
     }
 }

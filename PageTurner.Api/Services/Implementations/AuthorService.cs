@@ -48,6 +48,27 @@ namespace PageTurner.Api.Services.Implementations
                     if (!string.IsNullOrEmpty(filter.AuthorName))
                         query = query.Where(a => a.AuthorName == filter.AuthorName);
                 }
+                if (!string.IsNullOrWhiteSpace(filter?.SortBy))
+                {
+                    var isDesc = filter.SortDirection?.ToLower() == "desc";
+
+                    query = filter.SortBy.ToLower() switch
+                    {
+                        "author name" => isDesc
+                            ? query.OrderByDescending(a => a.AuthorName)
+                            : query.OrderBy(a => a.AuthorName),
+
+                        "authorbio" => isDesc
+                            ? query.OrderByDescending(a => a.AuthorBio)
+                            : query.OrderBy(a => a.AuthorBio),
+
+                        "authorid" => isDesc
+                            ? query.OrderByDescending(a => a.AuthorId)
+                            : query.OrderBy(a => a.AuthorId),
+
+                        _ => query.OrderBy(a => a.AuthorName),
+                    };
+                }
 
                 var totalItems = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);

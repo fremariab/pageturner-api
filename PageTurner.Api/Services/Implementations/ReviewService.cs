@@ -65,6 +65,34 @@ namespace PageTurner.Api.Services.Implementations
                     }
                 }
 
+                if (!string.IsNullOrWhiteSpace(filter?.SortBy))
+                {
+                    var isDesc = filter.SortDirection?.ToLower() == "desc";
+
+                    query = filter.SortBy.ToLower() switch
+                    {
+                        "comment" => isDesc
+                            ? query.OrderByDescending(r => r.Review.Comment)
+                            : query.OrderBy(r => r.Review.Comment),
+
+                        "rating" => isDesc
+                            ? query.OrderByDescending(r => r.Review.Rating)
+                            : query.OrderBy(r => r.Review.Rating),
+
+                        "booktitle" => isDesc
+                            ? query.OrderByDescending(b => b.Book.BookTitle)
+                            : query.OrderBy(b => b.Book.BookTitle),
+                        "reviewername" => isDesc
+                            ? query.OrderByDescending(r => r.Review.ReviewerName)
+                            : query.OrderBy(r => r.Review.ReviewerName),
+                        "reviewid" => isDesc
+                            ? query.OrderByDescending(r => r.Review.ReviewId)
+                            : query.OrderBy(r => r.Review.ReviewId),
+
+                        _ => query.OrderBy(r => r.Review.ReviewId),
+                    };
+                }
+
                 var totalItems = await query.CountAsync();
                 var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
@@ -183,6 +211,8 @@ namespace PageTurner.Api.Services.Implementations
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
 
+            await UpdateBookAverageRatingAsync(request.BookId);
+
             return new ReviewResponse
             {
                 ReviewId = reviewId,
@@ -206,6 +236,21 @@ namespace PageTurner.Api.Services.Implementations
             _context.Reviews.Remove(review);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private async Task UpdateBookAverageRatingAsync(string bookId)
+        {
+            var averageRating = await _context
+                .Reviews.Where(r => r.BookId == bookId)
+                .AverageAsync(r => r.Rating);
+
+            var book = await _context.Books.FindAsync(bookId);
+            if (book != null)
+            {
+                book.AverageRating = averageRating;
+                _context.Books.Update(book);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
