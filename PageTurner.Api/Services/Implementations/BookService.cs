@@ -48,15 +48,21 @@ namespace PageTurner.Api.Services.Implementations
                     // Apply filters
                     if (!string.IsNullOrEmpty(filter.BookTitle))
                     {
-                        query = query.Where(b => b.Book.BookTitle.Contains(filter.BookTitle));
+                        query = query.Where(b =>
+                            b.Book.BookTitle.ToLower().Contains(filter.BookTitle.ToLower())
+                        );
                     }
                     if (!string.IsNullOrEmpty(filter.Author))
                     {
-                        query = query.Where(b => b.Author.AuthorName.Contains(filter.Author));
+                        query = query.Where(b =>
+                            b.Author.AuthorName.ToLower().Contains(filter.Author.ToLower())
+                        );
                     }
                     if (!string.IsNullOrEmpty(filter.ISBN))
                     {
-                        query = query.Where(b => b.Book.ISBN.Contains(filter.ISBN));
+                        query = query.Where(b =>
+                            b.Book.ISBN.ToLower().Contains(filter.ISBN.ToLower())
+                        );
                     }
                     if (filter.StockQuantity.HasValue)
                     {
@@ -71,7 +77,9 @@ namespace PageTurner.Api.Services.Implementations
                     }
                     if (!string.IsNullOrEmpty(filter.Genre))
                     {
-                        query = query.Where(b => b.Book.Genre.Contains(filter.Genre));
+                        query = query.Where(b =>
+                            b.Book.Genre.ToLower().Contains(filter.Genre.ToLower())
+                        );
                     }
 
                     if (filter.InStock.HasValue && filter.InStock.Value)

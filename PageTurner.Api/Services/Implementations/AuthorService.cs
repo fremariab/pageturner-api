@@ -40,13 +40,16 @@ namespace PageTurner.Api.Services.Implementations
                     if (!string.IsNullOrWhiteSpace(filter.AuthorBio))
                     {
                         query = query.Where(a =>
-                            a.AuthorBio != null
-                            && a.AuthorBio.ToLower().Contains(filter.AuthorBio.ToLower())
+                            a.AuthorBio.ToLower().Contains(filter.AuthorBio.ToLower())
                         );
                     }
 
                     if (!string.IsNullOrEmpty(filter.AuthorName))
-                        query = query.Where(a => a.AuthorName == filter.AuthorName);
+                    {
+                        query = query.Where(a =>
+                            a.AuthorName.ToLower().Contains(filter.AuthorName.ToLower())
+                        );
+                    }
                 }
                 if (!string.IsNullOrWhiteSpace(filter?.SortBy))
                 {

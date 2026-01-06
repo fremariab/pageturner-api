@@ -46,18 +46,21 @@ namespace PageTurner.Api.Services.Implementations
                 {
                     if (!string.IsNullOrEmpty(filter.ReviewerName))
                         query = query.Where(r =>
-                            r.Review.ReviewerName.Contains(filter.ReviewerName)
+                            r.Review.ReviewerName.ToLower().Contains(filter.ReviewerName.ToLower())
                         );
 
                     if (!string.IsNullOrEmpty(filter.Comment))
                     {
                         query = query.Where(r =>
-                            r.Review.Comment != null && r.Review.Comment.Contains(filter.Comment)
+                            r.Review.Comment != null
+                            && r.Review.Comment.ToLower().Contains(filter.Comment.ToLower())
                         );
                     }
                     if (!string.IsNullOrEmpty(filter.BookTitle))
                     {
-                        query = query.Where(r => r.Book.BookTitle.Contains(filter.BookTitle));
+                        query = query.Where(r =>
+                            r.Book.BookTitle.ToLower().Contains(filter.BookTitle.ToLower())
+                        );
                     }
                     if (filter.Rating.HasValue)
                     {
